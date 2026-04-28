@@ -1,0 +1,52 @@
+# Flutter
+app/.dart_tool/
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+app/.packages
+app/build/
+app/.idea/
+app/*.iml
+app/.metadata
+app/coverage/
+app/pubspec.lock
+
+# Generated
+**/*.g.dart
+**/*.freezed.dart
+!app/test/**/*.g.dart
+app/lib/data/local/database.g.dart
+
+# Android
+app/android/.gradle/
+app/android/app/debug/
+app/android/app/release/
+app/android/local.properties
+app/android/key.properties
+app/android/app/upload-keystore.jks
+
+# iOS
+app/ios/Pods/
+app/ios/Podfile.lock
+app/ios/.symlinks/
+app/ios/Flutter/Flutter.framework/
+app/ios/Flutter/Flutter.podspec
+app/ios/Flutter/flutter_export_environment.sh
+app/ios/Flutter/Generated.xcconfig
+app/ios/Runner.xcworkspace/xcuserdata/
+app/ios/Runner.xcodeproj/xcuserdata/
+app/ios/Runner.xcodeproj/project.xcworkspace/xcuserdata/
+
+# Backend
+backend/supabase/.branches/
+backend/supabase/.temp/
+backend/.env
+backend/.env.local
+backend/supabase/functions/_shared/import_map.json
+
+# General
+.DS_Store
+*.log
+.vscode/
+.env
+.env.*
+!.env.example
