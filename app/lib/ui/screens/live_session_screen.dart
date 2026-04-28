@@ -244,12 +244,11 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
 
     if (breach && !_alarming && t.alarmBeep) {
       _alarming = true;
-      _alarmPlayer
-        ..setLoopMode(LoopMode.one)
-        ..play();
+      unawaited(_alarmPlayer.setLoopMode(LoopMode.one));
+      unawaited(_alarmPlayer.play());
     } else if (!breach && _alarming) {
       _alarming = false;
-      _alarmPlayer.stop();
+      unawaited(_alarmPlayer.stop());
     }
   }
 

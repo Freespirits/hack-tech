@@ -16,6 +16,12 @@ import 'package:path_provider/path_provider.dart';
 
 part 'database.g.dart';
 
+// `@DataClassName` overrides Drift's default singular naming so the
+// generated row classes don't collide with the domain models in
+// `lib/data/models/` (e.g. our `Pet` model vs Drift's default `Pet`
+// row class).
+
+@DataClassName('PetData')
 class Pets extends Table {
   TextColumn get id => text()();
   TextColumn get clinicId => text()();
@@ -36,6 +42,7 @@ class Pets extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+@DataClassName('AlarmThresholdsData')
 class AlarmThresholdsTable extends Table {
   @override
   String get tableName => 'alarm_thresholds';
@@ -55,6 +62,7 @@ class AlarmThresholdsTable extends Table {
   Set<Column> get primaryKey => {petId};
 }
 
+@DataClassName('SessionData')
 class Sessions extends Table {
   TextColumn get id => text()();
   TextColumn get petId => text()();
@@ -77,6 +85,7 @@ class Sessions extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+@DataClassName('WaveformChunkRow')
 class WaveformChunks extends Table {
   @override
   String get tableName => 'waveform_chunks';
@@ -93,6 +102,7 @@ class WaveformChunks extends Table {
   BlobColumn get samples => blob()();
 }
 
+@DataClassName('VitalReadingRow')
 class VitalReadingsTable extends Table {
   @override
   String get tableName => 'vital_readings';
@@ -106,6 +116,7 @@ class VitalReadingsTable extends Table {
   RealColumn get tertiaryValue => real().nullable()();
 }
 
+@DataClassName('InsightData')
 class Insights extends Table {
   TextColumn get id => text()();
   TextColumn get sessionId => text()();
