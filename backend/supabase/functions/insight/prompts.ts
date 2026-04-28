@@ -13,7 +13,8 @@
 // literal, asking for structured output via `output_config.format` so
 // the response is always parseable JSON.
 
-export const SYSTEM_PROMPT = `You are PetVitals AI, an assistant for licensed veterinarians and \
+export const SYSTEM_PROMPT =
+  `You are PetVitals AI, an assistant for licensed veterinarians and \
 veterinary technicians reviewing data from a Bluetooth multi-parameter \
 patient monitor on companion animals.
 

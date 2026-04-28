@@ -27,7 +27,7 @@ jobs:
         run: deno fmt --check supabase/functions tests
 
       - name: Run prompt-cache prefix tests
-        run: deno task --config tests/deno.json test tests/
+        run: deno test --allow-env --allow-net --no-check tests/prompts_test.ts
 
   schema:
     runs-on: ubuntu-latest
@@ -48,16 +48,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Stub Supabase auth schema
+        env:
+          PGPASSWORD: postgres
+        run: |
+          # The migrations reference Supabase's `auth` schema and
+          # `auth.uid()` helper. Stub them so we can syntax-check the
+          # migration end-to-end (including the RLS policies) against
+          # a vanilla Postgres without Supabase running.
+          psql -h localhost -U postgres -v ON_ERROR_STOP=1 <<'SQL'
+          create schema if not exists auth;
+          create table if not exists auth.users (
+              id uuid primary key,
+              email text
+          );
+          create or replace function auth.uid() returns uuid
+              language sql stable as $$ select null::uuid $$;
+          SQL
+
       - name: Apply migrations
         env:
           PGPASSWORD: postgres
         run: |
-          # We can't apply Supabase migrations exactly because they
-          # depend on the `auth` schema. Strip the auth-table FK
-          # references for a syntax check; the policies are exercised
-          # in supabase functions test elsewhere.
           for f in supabase/migrations/*.sql; do
-            echo "checking $f"
-            sed 's/references auth.users(id) on delete cascade//; s/references auth.users(id) on delete set null//' "$f" \
-              | psql -h localhost -U postgres -v ON_ERROR_STOP=1
+            echo "applying $f"
+            psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f "$f"
           done

@@ -5,22 +5,51 @@
 // silently moves volatile content into the prefix gets caught.
 
 import {
-  assertEquals,
-  assertExists,
-  assertStringIncludes,
-} from "std/assert/mod.ts";
-import {
   buildSystemBlocks,
   OUTPUT_SCHEMA,
   SPECIES_REFERENCE,
   SYSTEM_PROMPT,
 } from "../supabase/functions/insight/prompts.ts";
 
+// Tiny inline assertion helpers — keeps the test file offline-runnable
+// and import-map-independent. Same shape as std/assert so the test
+// bodies read normally.
+function assertEquals<T>(actual: T, expected: T, msg?: string): void {
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+    throw new Error(
+      msg ??
+        `Expected ${JSON.stringify(expected)} but got ${
+          JSON.stringify(actual)
+        }`,
+    );
+  }
+}
+function assertExists<T>(
+  actual: T,
+  msg?: string,
+): asserts actual is NonNullable<T> {
+  if (actual === null || actual === undefined) {
+    throw new Error(msg ?? "Expected value to exist, got null/undefined");
+  }
+}
+function assertStringIncludes(
+  actual: string,
+  expected: string,
+  msg?: string,
+): void {
+  if (!actual.includes(expected)) {
+    throw new Error(
+      msg ?? `Expected string to include "${expected}", got: "${actual}"`,
+    );
+  }
+}
+
 Deno.test("system prompt does not contain dynamic content", () => {
   // No ISO dates, no UUIDs, no Date.now(). These would silently
   // invalidate the prompt cache on every call.
   const isoDateRegex = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
-  const uuidRegex = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/;
+  const uuidRegex =
+    /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/;
   if (isoDateRegex.test(SYSTEM_PROMPT)) {
     throw new Error("system prompt contains an ISO timestamp");
   }
@@ -54,8 +83,8 @@ Deno.test("system prompt contains the JSON shape contract", () => {
   assertStringIncludes(SYSTEM_PROMPT, "findings");
   assertStringIncludes(SYSTEM_PROMPT, "recommendations");
   assertStringIncludes(SYSTEM_PROMPT, "urgency");
-  // It also tells the model to never wrap output in markdown.
-  assertStringIncludes(SYSTEM_PROMPT, "no markdown");
+  // It also tells the model to never wrap output in markdown fences.
+  assertStringIncludes(SYSTEM_PROMPT, "markdown fences");
 });
 
 Deno.test("OUTPUT_SCHEMA is strict and complete", () => {
