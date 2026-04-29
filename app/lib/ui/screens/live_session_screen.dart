@@ -23,6 +23,7 @@ import '../../data/models/session.dart';
 import '../../signal/hrv.dart';
 import '../../signal/pan_tompkins.dart';
 import '../../signal/pleth_quality.dart';
+import '../../signal/species_baselines.dart';
 import '../widgets/connection_status_chip.dart';
 import '../widgets/ecg_waveform.dart';
 import '../widgets/vital_card.dart';
@@ -168,7 +169,8 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
             if (hrv.isMeaningful) _hr = hrv.meanHrBpm.round();
           }
         case RespReading():
-          // Collected to the DB; not rendered yet.
+          // Resp waveform isn't rendered live yet; HrRespReading drives
+          // the displayed RR. Per-sample persistence is on the roadmap.
           break;
         case HrRespReading():
           if (r.heartRate != null) _hr = r.heartRate;

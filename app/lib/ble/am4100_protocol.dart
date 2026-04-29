@@ -210,13 +210,14 @@ class Am4100FrameDecoder {
         continue;
       }
 
-      // BCI single-param SpO2: 5 bytes, byte 0 has high bit set, all
-      // payload bytes have high bit clear.
+      // BCI single-param SpO2: 5 bytes. byte 0 has high bit set; data
+      // bytes 1, 2, 4 have high bit clear; byte 3 (pulse rate) is
+      // permitted to be 0xFF, the protocol's "no PR" sentinel.
       if ((b0 & 0x80) != 0) {
         if (remaining < 5) break;
         final ok = (data[consumed + 1] & 0x80) == 0 &&
             (data[consumed + 2] & 0x80) == 0 &&
-            (data[consumed + 3] & 0x80) == 0 &&
+            ((data[consumed + 3] & 0x80) == 0 || data[consumed + 3] == 0xFF) &&
             (data[consumed + 4] & 0x80) == 0;
         if (ok) {
           _emitBci(data.sublist(consumed, consumed + 5), ts);

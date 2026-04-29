@@ -75,20 +75,29 @@ class BandPassFilter {
 /// 5-tap differentiator (Pan–Tompkins step 3).
 ///
 ///   y[n] = (1/8)·(2·x[n] + x[n-1] − x[n-3] − 2·x[n-4])
+///
+/// Stored as a fixed-size circular buffer to keep `process` allocation-
+/// free at 250 Hz on a phone.
 class FiveTapDifferentiator {
   final List<double> _w = List.filled(5, 0);
+  int _head = 0; // index of the *next* slot to overwrite (oldest sample)
 
   double process(double sample) {
-    _w
-      ..removeAt(0)
-      ..add(sample);
-    return (2 * _w[4] + _w[3] - _w[1] - 2 * _w[0]) / 8;
+    _w[_head] = sample;
+    _head = (_head + 1) % 5;
+    // After writing, _head points at oldest; oldest..oldest+4 wraps.
+    final w0 = _w[_head];
+    final w1 = _w[(_head + 1) % 5];
+    final w3 = _w[(_head + 3) % 5];
+    final w4 = _w[(_head + 4) % 5];
+    return (2 * w4 + w3 - w1 - 2 * w0) / 8;
   }
 
   void reset() {
     for (var i = 0; i < _w.length; i++) {
       _w[i] = 0;
     }
+    _head = 0;
   }
 }
 

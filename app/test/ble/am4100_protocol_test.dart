@@ -7,16 +7,18 @@ void main() {
       final decoder = Am4100FrameDecoder(
         clock: () => DateTime(2026, 1, 1, 12, 0, 0),
       );
-      final frame = <int>[
+      final out = <Am4100Reading>[];
+      final sub = decoder.readings.listen(out.add);
+      decoder.add(<int>[
         0x80 | 0x40 | 0x05, // sync, pulseBeep, signal=5
         0x55,               // pleth = 85
         0x00,               // bargraph=0, no PR high bit
         72,                 // pulse rate = 72 bpm
         97,                 // SpO2 = 97 %
-      ];
-      final readings = decoder.readings.take(1).toList();
-      decoder.add(frame);
-      final r = (await readings).single as SpO2Reading;
+      ]);
+      await Future<void>.delayed(Duration.zero);
+      expect(out, hasLength(1));
+      final r = out.single as SpO2Reading;
       expect(r.plethSample, 0x55);
       expect(r.pulseRate, 72);
       expect(r.spo2, 97);
@@ -24,34 +26,34 @@ void main() {
       expect(r.fingerOff, isFalse);
       expect(r.searching, isFalse);
       expect(r.pulseBeep, isTrue);
+      await sub.cancel();
       await decoder.close();
     });
 
     test('PR high bit reconstruction', () async {
       // pulse rate 200 = 0xC8 = bit 7 + 0x48; high bit lives in byte[2] bit 6.
       final decoder = Am4100FrameDecoder();
-      final frame = <int>[
-        0x80,
-        0x10,
-        0x40,    // PR high bit set
-        0x48,    // PR low bits = 72
-        100,
-      ];
-      final readings = decoder.readings.take(1).toList();
-      decoder.add(frame);
-      final r = (await readings).single as SpO2Reading;
-      expect(r.pulseRate, 200);
+      final out = <Am4100Reading>[];
+      final sub = decoder.readings.listen(out.add);
+      decoder.add(<int>[0x80, 0x10, 0x40, 0x48, 100]);
+      await Future<void>.delayed(Duration.zero);
+      expect(out, hasLength(1));
+      expect((out.single as SpO2Reading).pulseRate, 200);
+      await sub.cancel();
       await decoder.close();
     });
 
     test('invalid sentinels (0xFF / 127) become null', () async {
       final decoder = Am4100FrameDecoder();
-      final frame = <int>[0x80, 0x10, 0x00, 0xFF, 127];
-      final readings = decoder.readings.take(1).toList();
-      decoder.add(frame);
-      final r = (await readings).single as SpO2Reading;
+      final out = <Am4100Reading>[];
+      final sub = decoder.readings.listen(out.add);
+      decoder.add(<int>[0x80, 0x10, 0x00, 0xFF, 127]);
+      await Future<void>.delayed(Duration.zero);
+      expect(out, hasLength(1));
+      final r = out.single as SpO2Reading;
       expect(r.pulseRate, isNull);
       expect(r.spo2, isNull);
+      await sub.cancel();
       await decoder.close();
     });
 

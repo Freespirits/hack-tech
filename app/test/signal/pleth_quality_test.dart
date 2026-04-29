@@ -19,8 +19,8 @@ void main() {
       // mean ~50, AC ~30 peak-to-peak → PI ~60 %
       q.add((50 + 15 * sin(2 * pi * i / 60)).round());
     }
-    final pi = q.perfusionIndex();
-    expect(pi, greaterThan(50));
+    final piValue = q.perfusionIndex();
+    expect(piValue, greaterThan(50));
     expect(q.isTrustworthy(), isTrue);
     expect(q.qualityScore(), greaterThan(0.9));
   });
@@ -30,8 +30,8 @@ void main() {
     for (var i = 0; i < 240; i++) {
       q.add(50);
     }
-    final pi = q.perfusionIndex();
-    expect(pi, lessThan(0.1));
+    final piValue = q.perfusionIndex();
+    expect(piValue, lessThan(0.1));
     expect(q.isTrustworthy(), isFalse);
   });
 }

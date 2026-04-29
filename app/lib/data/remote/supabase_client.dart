@@ -56,6 +56,9 @@ class SupabaseGateway {
         .from('clinic_members')
         .select('clinic_id')
         .eq('user_id', _client.auth.currentUser!.id);
-    return (rows as List).map((r) => r['clinic_id'] as String).toList();
+    return [
+      for (final row in rows as List<dynamic>)
+        (row as Map<String, dynamic>)['clinic_id'] as String,
+    ];
   }
 }

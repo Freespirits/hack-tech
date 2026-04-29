@@ -44,27 +44,28 @@ class PanTompkinsDetector {
         ),
         _diff = FiveTapDifferentiator(),
         _integrator = MovingAverage(max(1, (0.150 * sampleHz).round())),
-        _refractorySamples = (0.200 * sampleHz).round() {
-    _learningSamples = (2 * sampleHz).round();
-  }
+        _refractorySamples = (0.200 * sampleHz).round(),
+        _learningSamples = (2 * sampleHz).round();
 
   final double _sampleHz;
   final BandPassFilter _bandpass;
   final FiveTapDifferentiator _diff;
   final MovingAverage _integrator;
   final int _refractorySamples;
-  late final int _learningSamples;
+  // Learning window measured in *input samples*, not in peaks. After
+  // _sampleIndex passes _learningSamples, the adaptive threshold takes
+  // over from the bootstrap statistics gathered during learning.
+  final int _learningSamples;
 
   // Adaptive threshold state (Pan-Tompkins 1985, eqs. 4–8).
   double _spki = 0; // signal peak estimate (integrated)
   double _npki = 0; // noise peak estimate
   double _threshold1 = 0;
+  bool _learningDone = false;
   int _samplesSinceLastQrs = 1 << 30;
   int _sampleIndex = 0;
-  int _learningCount = 0;
   double _learningMax = 0;
 
-  double _lastIntegrated = 0;
   double _peak = 0;
   bool _rising = true;
 
@@ -90,22 +91,22 @@ class PanTompkinsDetector {
       // We just passed a local max at value = _peak.
       final detection = _evaluatePeak(_peak, timestamp);
       _peak = integrated;
-      _lastIntegrated = integrated;
       return detection;
     }
 
-    _lastIntegrated = integrated;
     return null;
   }
 
   QrsDetection? _evaluatePeak(double peakValue, DateTime ts) {
-    // Initial 2-second learning phase: gather amplitude statistics.
-    if (_learningCount < _learningSamples) {
-      _learningCount += 1;
+    // Initial learning phase, ending after `_learningSamples` input
+    // samples. Track the largest local-max we see; on completion,
+    // bootstrap SPKI/NPKI from it and arm the adaptive threshold.
+    if (!_learningDone) {
       if (peakValue > _learningMax) _learningMax = peakValue;
-      if (_learningCount == _learningSamples) {
-        _spki = _learningMax * 0.125;
-        _npki = _learningMax * 0.025;
+      if (_sampleIndex >= _learningSamples) {
+        _learningDone = true;
+        _spki = _learningMax * 0.5;
+        _npki = _learningMax * 0.05;
         _threshold1 = _npki + 0.25 * (_spki - _npki);
       }
       return null;
@@ -144,10 +145,9 @@ class PanTompkinsDetector {
     _threshold1 = 0;
     _samplesSinceLastQrs = 1 << 30;
     _sampleIndex = 0;
-    _learningCount = 0;
+    _learningDone = false;
     _learningMax = 0;
     _peak = 0;
     _rising = true;
-    _lastIntegrated = 0;
   }
 }

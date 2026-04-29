@@ -7,7 +7,6 @@
 /// "reconnecting (3/∞)" instead of "device disconnected, please reopen".
 library;
 
-import 'dart:async';
 import 'dart:math';
 
 import 'package:meta/meta.dart';
