@@ -1,0 +1,43 @@
+name: Flutter CI
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.22.x
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate Drift sources
+        run: dart run build_runner build --delete-conflicting-outputs
+        continue-on-error: false
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos
+
+      - name: Run tests
+        run: flutter test --coverage
+
+      - name: Upload coverage
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: app/coverage/lcov.info
+          retention-days: 7
