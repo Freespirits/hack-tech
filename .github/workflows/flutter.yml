@@ -67,6 +67,12 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Patch flutter_blue_plus_android for AGP 8 compatibility
+        # See app/tool/patch_flutter_blue_plus.sh for the rationale —
+        # the upstream plugin's `compileSdkVersion = flutter.compileSdkVersion`
+        # line crashes Gradle 8 / AGP 8 configuration. Idempotent.
+        run: bash tool/patch_flutter_blue_plus.sh
+
       - name: Generate Drift sources
         run: dart run build_runner build --delete-conflicting-outputs
 
