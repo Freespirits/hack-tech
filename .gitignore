@@ -55,3 +55,4 @@ backend/supabase/functions/_shared/import_map.json
 .env
 .env.*
 !.env.example
+dist/
