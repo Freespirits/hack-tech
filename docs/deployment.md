@@ -54,15 +54,51 @@ SUPABASE_ANON_KEY=...
 ```sh
 cd app
 flutter pub get
+# One-shot fix for a known flutter_blue_plus_android + AGP 8 bug.
+# Idempotent; safe to re-run after every `flutter pub get`.
+bash tool/patch_flutter_blue_plus.sh
 flutter build apk --release \
     --dart-define=SUPABASE_URL=https://<ref>.supabase.co \
     --dart-define=SUPABASE_ANON_KEY=<anon-key>
+```
+
+For per-architecture APKs (smaller per-device download — typical
+arm64-v8a build is ~10 MB instead of ~28 MB):
+
+```sh
+flutter build apk --release --split-per-abi \
+    --dart-define=SUPABASE_URL=...
+# emits app-armeabi-v7a-release.apk, app-arm64-v8a-release.apk,
+# app-x86_64-release.apk under app/build/app/outputs/flutter-apk/
 ```
 
 The app's smallest Android API is 26 (Android 8.0). The
 `foregroundServiceType="connectedDevice"` requires API 29+; on
 older devices the foreground service still starts but without the
 explicit type.
+
+#### Build environment
+
+The Gradle scaffold is pinned to:
+- AGP **8.4.0**
+- Gradle **8.7**
+- Kotlin **1.9.24**
+- Java source/target **17**
+- minSdk **21**, compileSdk/targetSdk **34**
+
+These are the lowest combo that runs on JDK 21 (the only JDK on
+most modern CI agents).
+
+#### Pre-built APKs from CI
+
+The `apk` job in `.github/workflows/flutter.yml` runs after the unit
+tests on every push to `main` or `claude/**` and uploads two
+artifacts with 30-day retention:
+
+- `petvitals-universal-apk` — single APK for any device
+- `petvitals-split-apks` — per-ABI APKs (smaller per device)
+
+Download from the Actions tab → workflow run → Artifacts.
 
 ### iOS
 
