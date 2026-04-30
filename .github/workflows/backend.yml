@@ -1,0 +1,76 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  prompts:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.45.x
+
+      - name: Lint Edge Functions
+        run: deno lint supabase/functions
+
+      - name: Format check
+        run: deno fmt --check supabase/functions tests
+
+      - name: Run prompt-cache prefix tests
+        run: deno test --allow-env --allow-net --no-check tests/prompts_test.ts
+
+  schema:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Stub Supabase auth schema
+        env:
+          PGPASSWORD: postgres
+        run: |
+          # The migrations reference Supabase's `auth` schema and
+          # `auth.uid()` helper. Stub them so we can syntax-check the
+          # migration end-to-end (including the RLS policies) against
+          # a vanilla Postgres without Supabase running.
+          psql -h localhost -U postgres -v ON_ERROR_STOP=1 <<'SQL'
+          create schema if not exists auth;
+          create table if not exists auth.users (
+              id uuid primary key,
+              email text
+          );
+          create or replace function auth.uid() returns uuid
+              language sql stable as $$ select null::uuid $$;
+          SQL
+
+      - name: Apply migrations
+        env:
+          PGPASSWORD: postgres
+        run: |
+          for f in supabase/migrations/*.sql; do
+            echo "applying $f"
+            psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f "$f"
+          done
